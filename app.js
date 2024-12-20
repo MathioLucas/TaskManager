@@ -36,3 +36,25 @@ const App: React.FC = () => {
     </RecoilRoot>
   );
 };
+export default App;
+
+// context/WebSocketContext.tsx
+import React, { createContext, useContext, useEffect, useRef } from 'react';
+import { useRecoilState } from 'recoil';
+import { tasksState } from '../atoms/tasks';
+
+const WebSocketContext = createContext<WebSocket | null>(null);
+
+export const WebSocketProvider: React.FC = ({ children }) => {
+  const wsRef = useRef<WebSocket | null>(null);
+  const [tasks, setTasks] = useRecoilState(tasksState);
+
+  useEffect(() => {
+    wsRef.current = new WebSocket('ws://localhost:8000/ws/' + Math.random());
+
+    wsRef.current.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.type === 'task_created') {
+        setTasks([...tasks, data.task]);
+      }
+    };
