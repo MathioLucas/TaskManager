@@ -74,3 +74,28 @@ export const WebSocketProvider: React.FC = ({ children }) => {
 };
 
 export const useWebSocket = () => useContext(WebSocketContext);
+
+import React from 'react';
+import { useQuery, useMutation } from 'react-query';
+import {
+  Box,
+  Container,
+  Grid,
+  Heading,
+  Button,
+  useDisclosure,
+} from '@chakra-ui/react';
+import { useRecoilState } from 'recoil';
+import { tasksState } from '../atoms/tasks';
+import TaskList from './TaskList';
+import CreateTaskModal from './CreateTaskModal';
+import { fetchTasks, createTask } from '../api/tasks';
+
+const Dashboard: React.FC = () => {
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [tasks, setTasks] = useRecoilState(tasksState);
+
+  const { data, isLoading } = useQuery('tasks', fetchTasks, {
+    onSuccess: (data) => setTasks(data),
+  });
+
