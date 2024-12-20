@@ -117,3 +117,28 @@ async def create_task(task: Task, current_user: User = Depends(get_current_user)
         "task": {**task_dict, "_id": str(result.inserted_id)}
     })
     return {"_id": str(result.inserted_id), **task_dict}
+
+@app.get("/tasks/")
+async def get_tasks(current_user: User = Depends(get_current_user)):
+    tasks = []
+    cursor = db.tasks.find({"$or": [
+        {"created_by": current_user.username},
+        {"assigned_to": current_user.username}
+    ]})
+    async for task in cursor:
+        task["_id"] = str(task["_id"])
+        tasks.append(task)
+    return tasks
+
+@app.websocket("/ws/{client_id}")
+async def websocket_endpoint(websocket: WebSocket, client_id: str):
+    await manager.connect(websocket)
+    try:
+        while True:
+            data = await websocket.receive_json()
+            await manager.broadcast(data)
+    except:
+        manager.disconnect(websocket)
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)
