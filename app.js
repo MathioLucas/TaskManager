@@ -99,3 +99,40 @@ const Dashboard: React.FC = () => {
     onSuccess: (data) => setTasks(data),
   });
 
+  const createTaskMutation = useMutation(createTask, {
+    onSuccess: (newTask) => {
+      setTasks([...tasks, newTask]);
+      onClose();
+    },
+  });
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+
+  return (
+    <Container maxW="container.xl" py={8}>
+      <Box mb={8}>
+        <Heading>Task Management Dashboard</Heading>
+        <Button colorScheme="blue" mt={4} onClick={onOpen}>
+          Create New Task
+        </Button>
+      </Box>
+
+      <Grid templateColumns="repeat(3, 1fr)" gap={6}>
+        <TaskList title="To Do" tasks={tasks.filter(t => t.status === 'pending')} />
+        <TaskList title="In Progress" tasks={tasks.filter(t => t.status === 'in_progress')} />
+        <TaskList title="Done" tasks={tasks.filter(t => t.status === 'completed')} />
+      </Grid>
+
+      <CreateTaskModal
+        isOpen={isOpen}
+        onClose={onClose}
+        onCreateTask={(taskData) => createTaskMutation.mutate(taskData)}
+      />
+    </Container>
+  );
+};
+
+export default Dashboard;
+
