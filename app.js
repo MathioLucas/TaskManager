@@ -58,3 +58,19 @@ export const WebSocketProvider: React.FC = ({ children }) => {
         setTasks([...tasks, data.task]);
       }
     };
+
+    return () => {
+      if (wsRef.current) {
+        wsRef.current.close();
+      }
+    };
+  }, [tasks]);
+
+  return (
+    <WebSocketContext.Provider value={wsRef.current}>
+      {children}
+    </WebSocketContext.Provider>
+  );
+};
+
+export const useWebSocket = () => useContext(WebSocketContext);
