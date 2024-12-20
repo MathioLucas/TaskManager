@@ -93,3 +93,27 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
     if user is None:
         raise credentials_exception
     return User(**user)
+
+# API Routes
+@app.post("/token")
+async def login(form_data: OAuth2PasswordRequestForm = Depends()):
+    user = await db.users.find_one({"username": form_data.username})
+    if not user or not verify_password(form_data.password, user["hashed_password"]):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    access_token = create_access_token(data={"sub": user["username"]})
+    return {"access_token": access_token, "token_type": "bearer"}
+
+@app.post("/tasks/")
+async def create_task(task: Task, current_user: User = Depends(get_current_user)):
+    task_dict = task.dict()
+    task_dict["created_by"] = current_user.username
+    result = await db.tasks.insert_one(task_dict)
+    await manager.broadcast({
+        "type": "task_created",
+        "task": {**task_dict, "_id": str(result.inserted_id)}
+    })
+    return {"_id": str(result.inserted_id), **task_dict}
